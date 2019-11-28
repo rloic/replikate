@@ -1,0 +1,25 @@
+comments: |
+  Simple hello world!
+requirements:
+  - name: gcc
+    version: '*'
+versioning:
+  repository: https://github.com/rloic/replikate
+  # optional:
+  # authentication: true / false <- will ask authentication to the user
+  # commit: hash <- The script will checkout the specific hash
+path: '{FILE}/src' # Installation path
+shortcuts:
+  gcc_opt: '-O3'
+compile: 'gcc {gcc_opt} hello_world.c'
+execute: './a.out'
+experiments:
+  - name: Say_Hello
+    parameters: []
+measures: ['message'] # Indicates what are the outputs
+stats: [time] # Time <- return the execution time of the first iteration of each experiment
+  # available stats are time, mean, max, min
+iterations: 1
+timeout:
+  duration: 5
+  unit: MINUTES
