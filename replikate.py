@@ -223,7 +223,7 @@ def project_from_file(f) -> Union[Project, None]:
         data['comments'] if 'comments' in data else None,
         data['path'],
         list(map(requirement_from_yml, data['requirements'])) if 'requirements' in data else [],
-        data['shortcuts'],
+        data['shortcuts'] if 'shortcuts' in data else {},
         int(data['iterations']),
         versioning_from_yml(data['versioning']) if 'versioning' in data else None,
         data['compile'],
