@@ -1,24 +1,25 @@
 #!/usr/bin/python3
-import base64
 import csv
 import datetime
 import getpass
 import os
 import shutil
-import smtplib
-import ssl
 import subprocess
+import sys
 import urllib.request
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.utils import formatdate
+from typing import Dict, List, Union, TypeVar
 from urllib.parse import quote
-from typing import Dict, List, Union, TypeVar, Tuple
 
 import yaml
-import sys
+
+from replikate_lib.emailing.e_mailer import EMailer
+from replikate_lib.emailing.mail_account import MailAccount
+from replikate_lib.emailing.server_parameters import ServerParameters
+from replikate_lib.model.experiment import Experiment
+from replikate_lib.model.project import Project
+from replikate_lib.model.requirement import Requirement
+from replikate_lib.model.timeout import Timeout
+from replikate_lib.model.versioning import Versioning
 
 T = TypeVar('T')
 
@@ -28,167 +29,6 @@ def safe_run(cmd: str) -> bool:
     if status != 0:
         print(' | Fail to run cmd: {}'.format(cmd))
     return status == 0
-
-
-class Requirement:
-    def __init__(self, name: str, version: str):
-        self.name = name
-        self.version = version
-
-
-class Timeout:
-    def __init__(self, duration: int, unit: str):
-        self.duration = duration
-        if unit not in ['SECONDS', 'MINUTES', 'HOURS', 'DAYS']:
-            raise ValueError('invalid unit {0}'.format(unit))
-        self.unit = unit
-
-    def to_seconds(self):
-        coefficient = 1
-        if self.unit != 'SECONDS':
-            coefficient *= 60
-            if self.unit != 'MINUTES':
-                coefficient *= 60
-                if self.unit != 'HOURS':
-                    coefficient *= 24
-        return coefficient * self.duration
-
-
-class Experiment:
-    def __init__(
-            self,
-            name: str,
-            parameters: List[str],
-            disable: bool,
-            timeout: Union[Timeout, None],
-            level: int
-    ):
-        self.name = name
-        self.parameters = parameters
-        self.disable = disable
-        self.timeout = timeout
-        self.level = level
-
-
-class Versioning:
-    def __init__(self, repository: str, commit: Union[str, None], authentication: bool):
-        self.repository = repository
-        self.commit = commit
-        self.authentication = authentication
-
-
-class Project:
-    def __init__(
-            self,
-            comments: Union[str, None],
-            path: str,
-            requirements: List[Requirement],
-            shortcuts: Dict[str, str],
-            iterations: int,
-            versioning: Versioning,
-            compile: str,
-            execute: str,
-            experiments: List[Experiment],
-            measures: List[str],
-            stats: List[str],
-            timeout: Timeout
-    ):
-        self.comments = comments
-        self.path = path
-        self.requirements = requirements
-        self.shortcuts = shortcuts
-        self.iterations = iterations
-        self.versioning = versioning
-        self.compile = compile
-        self.execute = execute
-        self.experiments = experiments
-        self.measures = measures
-        self.stats = stats
-        self.timeout = timeout
-
-    def restore(self, cmd: str) -> str:
-        cmd = cmd.replace('{PROJECT}', self.path)
-        shortcuts = self.shortcuts
-        if shortcuts is None or len(shortcuts) == 0:
-            return cmd
-        else:
-            while True:
-                old = cmd
-                for label, text in shortcuts.items():
-                    cmd = cmd.replace('{' + label + '}', text)
-                cmd = cmd.replace('{PROJECT}', self.path)
-                if cmd == old:
-                    break
-            return cmd
-
-
-class ServerParameters:
-    def __init__(
-            self,
-            host: str,
-            port: int,
-            authentication: Union[str, None]
-    ):
-        self.host = host
-        self.port = port
-        if authentication not in [None, 'STARTTLS', 'SSL/TLS']:
-            raise ValueError('Invalid authentication mode {}'.format(authentication))
-        self.authentication = authentication
-
-
-class MailAccount:
-    def __init__(
-            self,
-            user_name: str,
-            mail: str
-    ):
-        self.user_name = user_name
-        self.mail = mail
-
-
-class EMailer:
-    def __init__(
-            self,
-            server_parameters: ServerParameters,
-            mail_account: MailAccount
-    ):
-        self.server_parameters = server_parameters
-        self.mail_account = mail_account
-        self.pwd = None
-        if server_parameters.authentication is not None:
-            print(' | Required password for sending mail')
-            self.pwd = getpass.getpass(' | Password for {}@{}: '.format(mail_account.user_name, server_parameters.host))
-
-    def send_mail(self, receivers: List[str], subject: str, message: str, files: List[Tuple[str, str]] = []):
-        if self.server_parameters.authentication == 'STARTTLS':
-            context = ssl.create_default_context()
-            try:
-                with smtplib.SMTP(self.server_parameters.host, self.server_parameters.port) as smtp:
-                    smtp.starttls(context=context)
-                    smtp.login(
-                        self.mail_account.user_name,
-                        self.pwd
-                    )
-                    mail = MIMEMultipart()
-                    mail['From'] = self.mail_account.mail
-                    mail['To'] = ', '.join(receivers)
-                    mail['Date'] = formatdate(localtime=True)
-                    mail['Subject'] = subject
-                    mail.attach(MIMEText(message, 'html'))
-                    for (f, name) in files:
-                        part = MIMEBase('application', 'octet-stream')
-                        part.set_payload(open(f, 'rb').read())
-                        encoders.encode_base64(part)
-                        part.add_header('Content-Disposition', 'piece; filename= %s' % name)
-                        mail.attach(part)
-
-                    smtp.sendmail(
-                        self.mail_account.mail,
-                        receivers,
-                        mail.as_string()
-                    )
-            except smtplib.SMTPException as e:
-                print('Cannot send email')
 
 
 def versioning_from_yml(yml) -> Versioning:
@@ -302,9 +142,10 @@ def pull(p: Project):
 
 
 def build(p: Project):
-    build_cmd = p.restore(p.compile)
+    build_cmd = p.restore(p.compile).split(" && ")
     print('>> Building executable')
-    safe_run(build_cmd)
+    for cmd in build_cmd:
+        safe_run(cmd)
     print('<< Building executable')
 
 
@@ -546,7 +387,7 @@ def execute(
                     skip_next = False
                     try:
                         start = datetime.datetime.now()
-                        execution = project.restore(project.execute).split(' ') + list(map(str, experiment.parameters))
+                        execution = project.restore(project.execute).split(' ') + list(map(p.restore, map(str, experiment.parameters)))
                         print('   > {}'.format(' '.join(execution)), end='\t', flush=True)
                         subprocess.check_call(
                             execution,
@@ -653,11 +494,11 @@ def generate_file(p: Project, config_file_name: str, model: str):
     short_hash = hash[:6]
     print('\\begin{{model}}[{} {}] \\label{{md:{}:{}}}'
         .format(
-            model.replace('_', ' '),
-            short_hash,
-            config_file_name[:config_file_name.rindex('.')][config_file_name.rindex('/')+1:].replace('_', '-'),
-            short_hash
-        )
+        model.replace('_', ' '),
+        short_hash,
+        config_file_name[:config_file_name.rindex('.')][config_file_name.rindex('/') + 1:].replace('_', '-'),
+        short_hash
+    )
     )
     print('\\configfile{{{}}}{{{}}}'.format(hash, config_file_name.replace('_', '\\_')))
     print(p.comments)
@@ -720,13 +561,15 @@ if __name__ == '__main__':
         repo = path[5:path.index(']')]
         if repo[-1] == '/':
             repo = repo[:-1]
-        path = path[path.index(']')+1:]
+        path = path[path.index(']') + 1:]
         if os.path.exists(path):
             print('  The file {} already exist, would you erase it ? [y/N]:'.format(path), end='')
             text = input()
             while text not in ["", "y", "Y", "n", "N"]:
                 text = input()
             if text in ['y', 'Y']:
+                print('  Erasing local file')
+                os.remove(path)
                 urllib.request.urlretrieve(repo + '/' + path, path)
             else:
                 print('  Loading aborted, the script will use the local file')
