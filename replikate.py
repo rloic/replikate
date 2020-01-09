@@ -82,7 +82,7 @@ def init(p: Project, folder):
         os.makedirs(folder)
 
     for experiment in p.experiments:
-        exp_folder = folder + '/' + 'results' + '/' + experiment.name
+        exp_folder = folder + '/' + 'logs' + '/' + experiment.name
         if not os.path.exists(exp_folder):
             os.makedirs(exp_folder)
 
@@ -149,9 +149,11 @@ def build(p: Project):
     print('<< Building executable')
 
 
-def clean(folder: str):
+def clean(config_filename: str, folder: str):
     print('>> Cleaning old results')
-    shutil.rmtree(folder + '/' + 'results')
+    shutil.rmtree(folder + '/' + 'logs')
+    if os.path.isfile(folder + '/' + config_filename + '.tsv'):
+        os.remove(folder + '/' + config_filename + '.tsv')
     print(' | Done')
     print('<< Cleaning old results')
 
@@ -355,8 +357,8 @@ def execute(
         email_args: Dict[str, Union[str, List[str]]]
 ):
     print('>> Running experiments')
-    results_folder = folder + '/' + 'results'
-    summary = results_folder + '/' + config_file_name + '.tsv'
+    results_folder = folder + '/' + 'logs'
+    summary = folder + '/' + config_file_name + '.tsv'
     if not os.path.exists(summary):
         with open(summary, 'a+') as summary_csv:
             summary_csv.write(CSV.header(p))
@@ -375,7 +377,7 @@ def execute(
             times = [0 for _ in range(project.iterations)]
 
             for i in range(project.iterations):
-                log_filename = exp_folder + '/' + str(i) + '.log'
+                log_filename = exp_folder + '/' + str(i) + '.txt'
 
                 timeout = None
                 if project.timeout is not None:
@@ -413,10 +415,10 @@ def execute(
                                 '<h1>' + experiment.name + '</h1>' +
                                 '<table>' +
                                 HTML.header(p) +
-                                HTML.row(p, experiment, exp_folder + '/' + str(i) + '.log', times) +
+                                HTML.row(p, experiment, exp_folder + '/' + str(i) + '.txt', times) +
                                 '</table>'
                                 '</body></html>',
-                                files=[(exp_folder + '/' + str(i) + '.log', 'log')]
+                                files=[(exp_folder + '/' + str(i) + '.txt', 'log')]
                             )
                             if email_args['on_timeout'] == 'first':
                                 email_args['on_timeout'] = 'never'
@@ -436,10 +438,10 @@ def execute(
                                 '<h1>' + experiment.name + '</h1>' +
                                 '<table>' +
                                 HTML.header(p) +
-                                HTML.row(p, experiment, exp_folder + '/' + str(i) + '.log', times) +
+                                HTML.row(p, experiment, exp_folder + '/' + str(i) + '.txt', times) +
                                 '</table>'
                                 '</body></html>',
-                                files=[(exp_folder + '/' + str(i) + '.log', 'log')]
+                                files=[(exp_folder + '/' + str(i) + '.txt', 'log')]
                             )
                             if email_args['on_failure'] == 'first':
                                 email_args['on_failure'] = 'never'
@@ -457,14 +459,14 @@ def execute(
                         '<h1>' + experiment.name + '</h1>' +
                         '<table>' +
                         HTML.header(p) +
-                        HTML.row(p, experiment, exp_folder + '/' + str(i) + '.log', times) +
+                        HTML.row(p, experiment, exp_folder + '/' + str(i) + '.txt', times) +
                         '</table>'
                         '</body></html>',
                         []
                     )
 
             with open(summary, 'a+') as summary_csv:
-                summary_csv.write(CSV.row(p, experiment, exp_folder + '/0.log', times))
+                summary_csv.write(CSV.row(p, experiment, exp_folder + '/0.txt', times))
                 summary_csv.close()
 
     files = []
@@ -594,9 +596,9 @@ if __name__ == '__main__':
             print(' -b or --build:\t Compile the project')
             print(
                 ' -r or --run:\t Run the experiments. The summary file will be located in {}'
-                    .format(project.path + '/results')
+                    .format(project.path)
             )
-            print(' --clean:\t Clean the results folder')
+            print(' --clean:\t Clean the logs folder and remove the summary file (.tsv)')
             print(' --mail: Configure the automatic email sending. ex --email:to=me@my-mail.com --email:frequency=each')
             print('    to: add an email to the recipients')
             print('    frequency: send an email foreach experiment (each) or when the full summary is complete (end).')
@@ -619,7 +621,7 @@ if __name__ == '__main__':
             build(project)
 
         if '--clean' in sys.argv:
-            clean(folder)
+            clean(config_filename, folder)
             init(project, folder)
 
         email_args = list(map(clean_mail_args, filter(is_email_arg, sys.argv)))
