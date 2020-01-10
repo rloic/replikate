@@ -10,7 +10,7 @@ class Project:
     def __init__(
             self,
             comments: Union[str, None],
-            path: str,
+            dev_path: Union[str, None],
             requirements: List[Requirement],
             shortcuts: Dict[str, str],
             iterations: int,
@@ -23,7 +23,8 @@ class Project:
             timeout: Timeout
     ):
         self.comments = comments
-        self.path = path
+        self.path = '{FILE}/src'
+        self.dev_path = dev_path
         self.requirements = requirements
         self.shortcuts = shortcuts
         self.iterations = iterations

@@ -61,7 +61,7 @@ def project_from_file(f) -> Union[Project, None]:
     data = yaml.safe_load(f)
     return Project(
         data['comments'] if 'comments' in data else None,
-        data['path'],
+        data['dev_path'] if 'dev_path' in data else None,
         list(map(requirement_from_yml, data['requirements'])) if 'requirements' in data else [],
         data['shortcuts'] if 'shortcuts' in data else {},
         int(data['iterations']),
@@ -584,7 +584,16 @@ if __name__ == '__main__':
 
     with open(path) as stream:
         project = project_from_file(stream)
-        project.path = project.path.replace('{FILE}', folder)
+
+        if '--dev' in sys.argv:
+            if project.dev_path is None:
+                print('Development path is not defined')
+                exit(1)
+            project.path = project.dev_path.replace('{FILE}', folder)
+        else:
+            project.path = project.path.replace('{FILE}', folder)
+
+        print(project.path)
 
         if len(sys.argv) == 2:
             print('Project requirements: ')
