@@ -165,7 +165,7 @@ def fill(a: List[T], value: T):
 
 class Stats:
     @staticmethod
-    def min(values: List[int]) -> int:
+    def min(values: List[float]) -> float:
         _min = values[0]
         for i in range(1, len(values)):
             if values[i] < _min:
@@ -173,7 +173,7 @@ class Stats:
         return _min
 
     @staticmethod
-    def max(values: List[int]) -> int:
+    def max(values: List[float]) -> float:
         _max = values[0]
         for i in range(1, len(values)):
             if values[i] > _max:
@@ -181,11 +181,11 @@ class Stats:
         return _max
 
     @staticmethod
-    def first(values: List[int]) -> int:
+    def first(values: List[float]) -> float:
         return values[0]
 
     @staticmethod
-    def mean(values: List[int]) -> float:
+    def mean(values: List[float]) -> float:
         sum = 0
         for i in range(len(values)):
             sum += values[i]
@@ -291,7 +291,7 @@ class CSV:
         return header
 
     @staticmethod
-    def row(p: Project, exp: Experiment, log_file: Union[str, None], times: List[int]) -> str:
+    def row(p: Project, exp: Experiment, log_file: Union[str, None], times: List[float]) -> str:
         row = '"' + exp.name + '"\t'
 
         timeout = None
@@ -374,7 +374,7 @@ def execute(
             now = datetime.datetime.now()
             print(' | Starting experiment [{}] @ {}'.format(experiment.name, now))
 
-            times = [0 for _ in range(project.iterations)]
+            times = [0.0 for _ in range(project.iterations)]
 
             for i in range(project.iterations):
                 log_filename = exp_folder + '/' + str(i) + '.txt'
@@ -398,7 +398,8 @@ def execute(
                             timeout=timeout
                         )
                         end = datetime.datetime.now()
-                        times[i] = (end - start).seconds
+                        diff = end - start
+                        times[i] = round(diff.total_seconds() * 10) / 10.0
                         print('[' + blue('V') + ']')
 
                     except subprocess.TimeoutExpired:
