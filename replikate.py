@@ -81,6 +81,7 @@ def init(p: Project, folder):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+    p.shortcuts['LOGS'] = folder + '/logs'
     for experiment in p.experiments:
         exp_folder = folder + '/' + 'logs' + '/' + experiment.name
         if not os.path.exists(exp_folder):
