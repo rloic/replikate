@@ -332,7 +332,7 @@ class CSV:
             row += '\t'
 
         for parameter in exp.parameters:
-            row += str(parameter)
+            row += str(p.restore(parameter))
             row += '\t'
 
         return row + '\n'
