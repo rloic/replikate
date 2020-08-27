@@ -332,7 +332,7 @@ class CSV:
             row += '\t'
 
         for parameter in exp.parameters:
-            row += str(p.restore(parameter))
+            row += str(p.restore(str(parameter)))
             row += '\t'
 
         return row + '\n'
@@ -396,7 +396,8 @@ def execute(
                             execution,
                             stdout=log_file,
                             stderr=subprocess.STDOUT,
-                            timeout=timeout
+                            timeout=timeout,
+                            cwd=p.path
                         )
                         end = datetime.datetime.now()
                         diff = end - start
