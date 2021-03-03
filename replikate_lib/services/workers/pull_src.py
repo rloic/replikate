@@ -31,18 +31,22 @@ def pull(p: Project) -> ExecutionState:
             return Cancelled
 
     versioning = p.versioning
-    git_cmd = 'git clone {} {}'.format(versioning.repository, '.')
+    git_cmd = 'git clone {} .'.format(versioning.repository)
 
     git_exec = run(p, git_cmd)
     if not git_exec:
         return git_exec
 
     if p.versioning.commit is not None:
-        checkout_cmd = 'git checkout {}'.format(
-            versioning.commit
-        )
+        checkout_cmd = 'git checkout {}'.format(versioning.commit)
         checkout_execution = run(p, checkout_cmd)
         if not checkout_execution:
             return checkout_execution
+
+    if p.versioning.submodules:
+        init_submodules_cmd = 'git submodule update --init'
+        init_submodules_execution = run(p, init_submodules_cmd)
+        if not init_submodules_execution:
+            return init_submodules_execution
 
     return Ok
