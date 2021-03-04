@@ -25,7 +25,7 @@ def versioning_from_yml(yml) -> Versioning:
         yml['repository'],
         yml['commit'] if 'commit' in yml else None,
         bool(yml['authentication']) if 'authentication' in yml else False,
-        bool(yml['submodules']) if 'submodules' in yaml else False
+        bool(yml['submodules']) if 'submodules' in yml else False
     )
 
 
