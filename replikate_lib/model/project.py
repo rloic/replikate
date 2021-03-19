@@ -20,7 +20,8 @@ class Project:
             experiments: List[Experiment],
             measures: List[str],
             stats: List[str],
-            timeout: Timeout
+            timeout: Timeout,
+            nb_threads: Union[None, int]
     ):
         self.comments = comments
         self.path = '{FILE}/src'
@@ -35,6 +36,7 @@ class Project:
         self.measures = measures
         self.stats = stats
         self.timeout = timeout
+        self.nb_threads = nb_threads
 
     def restore(self, cmd: str) -> str:
         cmd = cmd.replace('{PROJECT}', self.path)

@@ -61,7 +61,8 @@ def project_from_file(f) -> Union[Project, None]:
         list(map(experiment_from_yml, data['experiments'])),
         data['measures'],
         data['stats'],
-        timeout_from_yml(data['timeout']) if 'timeout' in data else None
+        timeout_from_yml(data['timeout']) if 'timeout' in data else None,
+        int(data['nb_threads']) if 'nb_threads' in data else None
     )
 
 
@@ -99,6 +100,8 @@ def mslice(s):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print('Usage: replikate config.yml [OPTIONS]')
     path = sys.argv[1]
 
     (folder, config_filename) = mslice(path[:path.rindex('.')])
@@ -117,7 +120,6 @@ if __name__ == '__main__':
         else:
             project.path = project.path.replace('{FILE}', folder)
 
-
         if len(sys.argv) == 2:
             print('Project requirements: ')
             for requirement in project.requirements:
@@ -131,13 +133,6 @@ if __name__ == '__main__':
                     .format(project.path)
             )
             print(' --clean:\t Clean the logs folder and remove the summary file (.tsv)')
-            print(' --mail: Configure the automatic email sending. ex --email:to=me@my-mail.com --email:frequency=each')
-            print('    to: add an email to the recipients')
-            print('    frequency: send an email foreach experiment (each) or when the full summary is complete (end).')
-            print('    on_failure: indicates whenever an email must be send when an experiment fails, '
-                  'valid options are [never, first, always]')
-            print('    on_timeout: indicates whenever an email must be send when an experiment produces a timeout, '
-                  'valid options are [never, first, always]')
             print()
             if project.comments is not None:
                 print('Notes: ')
