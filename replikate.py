@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     (folder, config_filename) = mslice(path[:path.rindex('.')])
 
-    folder = folder + '/' + config_filename
+    folder = folder + '/' + config_filename + '.d'
 
     with open(path) as stream:
         project = project_from_file(stream)
