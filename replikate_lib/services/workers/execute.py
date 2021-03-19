@@ -69,7 +69,7 @@ def execute(
             summary_csv.close()
 
     instances = [ExperimentArgs(p, exp, results_folder, summary) for exp in sorted(p.experiments, key=lambda it: it.level)]
-    with multiprocessing.Pool(p.nb_threads if p.nb_threads is not None else 1) as pool:
+    with multiprocessing.Pool(processes=p.nb_threads if p.nb_threads is not None else 1) as pool:
         pool.map(__run_instance, instances)
 
 
@@ -90,7 +90,6 @@ def __run_instance(args: ExperimentArgs):
     lock_file = exp_folder + '/' + '_lock'
     if not os.path.exists(lock_file):
         open(lock_file, 'w+')
-        now = datetime.datetime.now()
 
         times: List[Union[float, str]] = [0.0 for _ in range(p.iterations)]
 

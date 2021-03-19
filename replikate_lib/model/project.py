@@ -1,4 +1,4 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 
 from replikate_lib.model.experiment import Experiment
 from replikate_lib.model.requirement import Requirement
@@ -9,8 +9,8 @@ from replikate_lib.model.versioning import Versioning
 class Project:
     def __init__(
             self,
-            comments: Union[str, None],
-            dev_path: Union[str, None],
+            comments: Optional[str],
+            dev_path: Optional[str],
             requirements: List[Requirement],
             shortcuts: Dict[str, str],
             iterations: int,
@@ -21,7 +21,7 @@ class Project:
             measures: List[str],
             stats: List[str],
             timeout: Timeout,
-            nb_threads: Union[None, int]
+            nb_threads: Optional[int]
     ):
         self.comments = comments
         self.path = '{FILE}/src'

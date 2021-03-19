@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
-from typing import Union, TypeVar
+from typing import TypeVar, Optional
 
 import yaml
 
@@ -47,7 +47,7 @@ def requirement_from_yml(yml) -> Requirement:
     return Requirement(yml['name'], yml['version'])
 
 
-def project_from_file(f) -> Union[Project, None]:
+def project_from_file(f) -> Optional[Project]:
     data = yaml.safe_load(f)
     return Project(
         data['comments'] if 'comments' in data else None,

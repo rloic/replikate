@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Optional
 
 from replikate_lib.model.timeout import Timeout
 
@@ -9,7 +9,7 @@ class Experiment:
             name: str,
             parameters: List[str],
             disable: bool,
-            timeout: Union[Timeout, None],
+            timeout: Optional[Timeout],
             level: int
     ):
         self.name = name

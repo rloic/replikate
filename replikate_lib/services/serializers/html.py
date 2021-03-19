@@ -1,7 +1,7 @@
-import csv
 import os
-from typing import Union, List
+from typing import List, Optional
 
+import csv
 from replikate_lib.model.experiment import Experiment
 from replikate_lib.model.project import Project
 from replikate_lib.services.computation.stats import Stats
@@ -47,7 +47,7 @@ class HTML:
         return html
 
     @staticmethod
-    def row(p: Project, exp: Experiment, log_file: Union[str, None], times: List[int]) -> str:
+    def row(p: Project, exp: Experiment, log_file: Optional[str], times: List[int]) -> str:
         row = '<tr><td>' + exp.name + '</td>'
 
         timeout = None
